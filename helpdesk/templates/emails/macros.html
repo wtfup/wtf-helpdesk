@@ -2,15 +2,19 @@
 <table cellpadding="0" cellspacing="0" role="presentation">
   <tbody>
     <tr>
-      <td class="button {{ 'button-primary' if primary else '' }}">
-        <a href="{{ link }}" rel="nofollow"> {{ label }} </a>
+      <td class="button {{ 'button-primary' if primary else '' }}" style="background-color: #D2000B; border-radius: 6px;">
+        <a href="{{ link }}" rel="nofollow" style="color: #ffffff; text-decoration: none; padding: 12px 24px; display: inline-block; font-family: 'Inter', Arial, sans-serif; font-weight: 600;"> {{ label }} </a>
       </td>
     </tr>
   </tbody>
 </table>
-{% endmacro %} {% macro link(label, link) %}
-<a class="link" href="{{ link }}">{{ label }}</a>
-{% endmacro %} {% macro separator() %}
+{% endmacro %}
+
+{% macro link(label, link) %}
+<a class="link" href="{{ link }}" style="color: #D2000B; font-weight: 500;">{{ label }}</a>
+{% endmacro %}
+
+{% macro separator() %}
 <table class="w-full" cellpadding="0" cellspacing="0" role="presentation">
   <tbody>
     <tr>
@@ -20,9 +24,43 @@
     </tr>
   </tbody>
 </table>
-{% endmacro %} {% macro signature() %}
-<p class="m-0">
-  Thanks,<br />
-  Team Frappe
+{% endmacro %}
+
+{% macro signature() %}
+<p class="m-0" style="font-family: 'Inter', Arial, sans-serif;">
+  Keep Evolving!<br />
+  <strong style="color: #D2000B;">WTF Support Team</strong><br />
+  <span style="font-size: 12px; color: #525252;">Work. Train. Fuel.</span>
 </p>
+{% endmacro %}
+
+{% macro wtf_header() %}
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #D2000B;">
+  <tbody>
+    <tr>
+      <td style="padding: 20px; text-align: center;">
+        <span style="color: #ffffff; font-family: 'Poppins', Arial, sans-serif; font-size: 24px; font-weight: 700;">WTF</span>
+        <span style="color: #F8C417; font-family: 'Inter', Arial, sans-serif; font-size: 14px; display: block;">Support</span>
+      </td>
+    </tr>
+  </tbody>
+</table>
+{% endmacro %}
+
+{% macro wtf_footer() %}
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #1A1A1A; margin-top: 30px;">
+  <tbody>
+    <tr>
+      <td style="padding: 20px; text-align: center; color: #ffffff; font-family: 'Inter', Arial, sans-serif; font-size: 12px;">
+        <p style="margin: 0; color: #F8C417; font-weight: 600;">WTF - What The Fitness</p>
+        <p style="margin: 5px 0 0 0;">India's Premium Fitness Brand</p>
+        <p style="margin: 10px 0 0 0; color: #888888;">
+          <a href="https://wtfgyms.com" style="color: #888888; text-decoration: none;">wtfgyms.com</a> |
+          <a href="https://wtfeveryday.com" style="color: #888888; text-decoration: none;">wtfeveryday.com</a> |
+          <a href="https://wtfgymsacademy.com" style="color: #888888; text-decoration: none;">wtfgymsacademy.com</a>
+        </p>
+      </td>
+    </tr>
+  </tbody>
+</table>
 {% endmacro %}

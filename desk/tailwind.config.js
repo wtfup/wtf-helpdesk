@@ -13,6 +13,19 @@ export default {
   safelist: [{ pattern: /!(text|bg)-/, variants: ["hover", "active"] }],
   theme: {
     extend: {
+      colors: {
+        wtf: {
+          red: '#D2000B',
+          'red-dark': '#B5000A',
+          charcoal: '#1A1A1A',
+          gold: '#F8C417',
+          'gold-dark': '#D4A813',
+        },
+      },
+      fontFamily: {
+        poppins: ['Poppins', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
+      },
       height: {
         18: "68px",
       },

@@ -2,14 +2,14 @@
   <img
     v-if="config.brandLogo"
     :src="config.brandLogo"
-    alt="Brand Logo"
+    alt="WTF Support"
     class="h-8 w-8 shrink-0 object-cover"
   />
-  <HDLogo v-else class="h-8 w-8 shrink-0 rounded" />
+  <WTFLogo v-else class="h-8 w-8 shrink-0 rounded" />
 </template>
 
 <script setup lang="ts">
-import HDLogo from "@/assets/logos/HDLogo.vue";
+import WTFLogo from "@/assets/logos/WTFLogo.vue";
 
 import { useConfigStore } from "@/stores/config";
 const config = useConfigStore();

@@ -4,9 +4,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* WTF Brand CSS Variables */
+:root {
+  --wtf-primary: #D2000B;
+  --wtf-primary-dark: #B5000A;
+  --wtf-charcoal: #1A1A1A;
+  --wtf-gold: #F8C417;
+  --wtf-gold-dark: #D4A813;
+}
+
+@layer base {
+  /* WTF Typography */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+}
+
 @layer components {
   .prose-f {
     @apply break-normal max-w-none prose prose-code:break-all prose-code:whitespace-pre-wrap prose-img:border prose-img:rounded-lg prose-sm prose-table:table-fixed prose-td:border prose-td:border-gray-300 prose-td:p-2 prose-td:relative prose-th:bg-gray-100 prose-th:border prose-th:border-gray-300 prose-th:p-2 prose-th:relative;
+  }
+
+  /* WTF Primary Button Overrides */
+  .btn-primary,
+  button[class*="bg-gray-900"],
+  [class*="bg-gray-900"]:not(.prose *) {
+    background-color: var(--wtf-primary) !important;
+  }
+
+  .btn-primary:hover,
+  button[class*="bg-gray-900"]:hover {
+    background-color: var(--wtf-primary-dark) !important;
+  }
+
+  /* WTF Accent Links */
+  a.text-blue-500,
+  .text-blue-500 {
+    color: var(--wtf-primary);
+  }
+
+  /* WTF Gold Accents for Premium Features */
+  .wtf-premium {
+    border-color: var(--wtf-gold);
+  }
+
+  .wtf-premium-badge {
+    background-color: var(--wtf-gold);
+    color: var(--wtf-charcoal);
   }
 }
 
