@@ -15,6 +15,8 @@ x-backend-defaults: &backend_defaults
   <<: [*depends_on_configurator, *customizable_image]
   volumes:
     - sites:/home/frappe/frappe-bench/sites
+    - ../helpdesk:/home/frappe/frappe-bench/apps/helpdesk/helpdesk
+    - ../desk:/home/frappe/frappe-bench/apps/helpdesk/desk
 
 services:
   # Traefik Reverse Proxy with SSL
@@ -135,6 +137,8 @@ services:
       CLIENT_MAX_BODY_SIZE: 50m
     volumes:
       - sites:/home/frappe/frappe-bench/sites
+      - ../helpdesk:/home/frappe/frappe-bench/apps/helpdesk/helpdesk
+      - ../desk:/home/frappe/frappe-bench/apps/helpdesk/desk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.helpdesk.rule=Host(`${SITE_NAME:-support.wtfgyms.com}`)"

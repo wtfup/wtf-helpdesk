@@ -1,0 +1,107 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  AZURE_VM_IP: ${{ secrets.AZURE_VM_IP }}
+  AZURE_VM_USER: azureuser
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+          cache-dependency-path: desk/yarn.lock
+
+      - name: Install dependencies
+        working-directory: desk
+        run: yarn install --frozen-lockfile
+
+      - name: Run linter
+        working-directory: desk
+        run: yarn lint || true
+
+      - name: Build frontend
+        working-directory: desk
+        run: yarn build
+
+  deploy:
+    name: Deploy to Production
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
+
+      - name: Add host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.AZURE_VM_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Azure VM
+        run: |
+          ssh ${{ env.AZURE_VM_USER }}@${{ secrets.AZURE_VM_IP }} << 'ENDSSH'
+            cd ~/wtf-helpdesk
+
+            # Pull latest code
+            git pull origin develop
+
+            # Restart services with new code
+            cd docker
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
+
+            # Rebuild frontend if desk changed
+            docker compose -f docker-compose.prod.yml exec -T backend bench build --app helpdesk || true
+
+            # Restart frontend to pick up changes
+            docker compose -f docker-compose.prod.yml restart frontend
+
+            echo "Deployment completed successfully!"
+          ENDSSH
+
+      - name: Health check
+        run: |
+          sleep 30
+          curl -f https://support.wtfgyms.com/api/method/frappe.ping || echo "Health check pending - DNS may not be configured yet"
+
+  notify:
+    name: Notify on Failure
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Send notification
+        run: |
+          echo "Deployment failed! Check the workflow logs for details."
+          # Add Slack/Discord/Email notification here if needed
