@@ -1,68 +1,341 @@
-# WTF Helpdesk Credentials
+# WTF Helpdesk - Complete Infrastructure & Credentials
 
-> **IMPORTANT**: This file contains sensitive credentials. Keep it secure and do not share publicly.
+> **IMPORTANT**: This file contains sensitive credentials. Keep it secure.
 
-## Production Environment (Azure VM)
+---
 
-### Azure Resources
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         INTERNET                                    │
+│                            │                                        │
+│                    ┌───────▼───────┐                                │
+│                    │   DNS (AWS)   │                                │
+│                    │ Route 53      │                                │
+│                    │ wtfgyms.com   │                                │
+│                    └───────┬───────┘                                │
+│                            │                                        │
+│         support.wtfgyms.com → 4.213.96.238                         │
+│                            │                                        │
+├────────────────────────────┼────────────────────────────────────────┤
+│                    AZURE CLOUD (Central India)                      │
+│  ┌─────────────────────────▼─────────────────────────────────────┐  │
+│  │              Resource Group: wtf-helpdesk-rg                  │  │
+│  │  ┌─────────────────────────────────────────────────────────┐  │  │
+│  │  │           VM: wtf-helpdesk-vm (Standard_B2s)            │  │  │
+│  │  │           IP: 4.213.96.238 | Ports: 22, 80, 443         │  │  │
+│  │  │  ┌───────────────────────────────────────────────────┐  │  │  │
+│  │  │  │              Docker Compose Stack                 │  │  │  │
+│  │  │  │                                                   │  │  │  │
+│  │  │  │  ┌─────────┐    ┌─────────┐    ┌─────────────┐   │  │  │  │
+│  │  │  │  │ Traefik │───▶│ Frontend│───▶│   Backend   │   │  │  │  │
+│  │  │  │  │ :80/:443│    │ (nginx) │    │  (gunicorn) │   │  │  │  │
+│  │  │  │  └─────────┘    └─────────┘    └──────┬──────┘   │  │  │  │
+│  │  │  │       │              │                │          │  │  │  │
+│  │  │  │       │         ┌────┴────┐     ┌─────▼─────┐    │  │  │  │
+│  │  │  │       │         │Websocket│     │  MariaDB  │    │  │  │  │
+│  │  │  │       │         │  :9000  │     │   :3306   │    │  │  │  │
+│  │  │  │       │         └─────────┘     └───────────┘    │  │  │  │
+│  │  │  │       │                               │          │  │  │  │
+│  │  │  │  ┌────┴────────────────────────┬─────┴─────┐    │  │  │  │
+│  │  │  │  │      Redis Cache :6379      │Redis Queue│    │  │  │  │
+│  │  │  │  └─────────────────────────────┴───────────┘    │  │  │  │
+│  │  │  │                                                  │  │  │  │
+│  │  │  │  ┌──────────┐ ┌──────────┐ ┌──────────────────┐ │  │  │  │
+│  │  │  │  │Scheduler │ │Queue-Long│ │   Queue-Short    │ │  │  │  │
+│  │  │  │  └──────────┘ └──────────┘ └──────────────────┘ │  │  │  │
+│  │  │  └───────────────────────────────────────────────────┘  │  │  │
+│  │  └─────────────────────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 1. Azure Resources
+
 | Resource | Value |
 |----------|-------|
-| Resource Group | `wtf-helpdesk-rg` |
-| VM Name | `wtf-helpdesk-vm` |
-| Location | Central India |
-| Public IP | `4.213.96.238` |
-| SSH User | `azureuser` |
+| **Subscription ID** | `8c3f21da-bea3-46d8-8916-0c07ff7db261` |
+| **Resource Group** | `wtf-helpdesk-rg` |
+| **VM Name** | `wtf-helpdesk-vm` |
+| **VM Size** | Standard_B2s (2 vCPU, 4GB RAM) |
+| **Location** | Central India |
+| **OS** | Ubuntu 22.04 LTS |
+| **Disk** | 64GB Premium SSD |
+| **Public IP** | `4.213.96.238` |
+| **NSG Ports** | 22 (SSH), 80 (HTTP), 443 (HTTPS) |
 
-### Application Credentials
-| Service | Username | Password |
-|---------|----------|----------|
-| Helpdesk Admin | `Administrator` | `WtfAdm1n2026` |
-| MariaDB Root | `root` | `WtfH3lpd3sk2026Pr0d` |
-
-### URLs
-| Environment | URL |
-|-------------|-----|
-| Production | https://support.wtfgyms.com |
-| Direct IP (temporary) | http://4.213.96.238 |
-
-### SSH Access
+### Azure CLI Commands
 ```bash
-ssh azureuser@4.213.96.238
+# View VM details
+az vm show -g wtf-helpdesk-rg -n wtf-helpdesk-vm
+
+# Start VM
+az vm start -g wtf-helpdesk-rg -n wtf-helpdesk-vm
+
+# Stop VM (deallocate)
+az vm deallocate -g wtf-helpdesk-rg -n wtf-helpdesk-vm
+
+# Delete entire resource group (DANGER!)
+az group delete --name wtf-helpdesk-rg --yes
 ```
+
+---
+
+## 2. Application Credentials
+
+### Frappe/Helpdesk Admin
+| Field | Value |
+|-------|-------|
+| **Username** | `Administrator` |
+| **Password** | `admin123` |
+| **URL** | https://support.wtfgyms.com |
+
+### MariaDB Database
+| Field | Value |
+|-------|-------|
+| **Host** | `mariadb` (internal Docker) |
+| **Port** | `3306` |
+| **Root User** | `root` |
+| **Root Password** | `WtfH3lpd3sk2026Pr0d` |
+| **Database** | `_ad03c816a2a1606f` (auto-generated) |
+
+### Redis
+| Service | URL |
+|---------|-----|
+| Cache | `redis://redis-cache:6379` |
+| Queue | `redis://redis-queue:6379` |
+
+---
+
+## 3. SSH Access
+
+```bash
+# Connect to VM
+ssh azureuser@4.213.96.238
+
+# SSH key location (auto-generated by Azure)
+~/.ssh/id_rsa
+```
+
+---
+
+## 4. Docker Services
+
+| Service | Image | Port | Purpose |
+|---------|-------|------|---------|
+| `traefik` | traefik:v2.11 | 80, 443 | Reverse proxy, SSL termination |
+| `frontend` | ghcr.io/frappe/helpdesk:stable | 8080 | Nginx serving frontend |
+| `backend` | ghcr.io/frappe/helpdesk:stable | 8000 | Frappe/Gunicorn API |
+| `websocket` | ghcr.io/frappe/helpdesk:stable | 9000 | Socket.io real-time |
+| `scheduler` | ghcr.io/frappe/helpdesk:stable | - | Background scheduler |
+| `queue-short` | ghcr.io/frappe/helpdesk:stable | - | Short queue worker |
+| `queue-long` | ghcr.io/frappe/helpdesk:stable | - | Long queue worker |
+| `mariadb` | mariadb:10.6 | 3306 | Database |
+| `redis-cache` | redis:7-alpine | 6379 | Cache |
+| `redis-queue` | redis:7-alpine | 6379 | Queue backend |
 
 ### Docker Commands (on VM)
 ```bash
-# View logs
 cd ~/wtf-helpdesk/docker
+
+# View all containers
+docker compose -f docker-compose.prod.yml ps
+
+# View logs (all services)
 docker compose -f docker-compose.prod.yml logs -f
 
-# Restart services
+# View logs (specific service)
+docker compose -f docker-compose.prod.yml logs -f backend
+
+# Restart all services
 docker compose -f docker-compose.prod.yml restart
+
+# Restart specific service
+docker compose -f docker-compose.prod.yml restart backend frontend
 
 # Stop all services
 docker compose -f docker-compose.prod.yml down
 
 # Start all services
 docker compose -f docker-compose.prod.yml up -d
+
+# Rebuild and restart
+docker compose -f docker-compose.prod.yml up -d --build
+
+# Execute command in container
+docker compose -f docker-compose.prod.yml exec backend bash
+
+# Run bench command
+docker compose -f docker-compose.prod.yml exec backend bench --site support.wtfgyms.com <command>
 ```
-
-## DNS Configuration (AWS Route 53)
-
-Add the following A record:
-- **Name**: `support.wtfgyms.com`
-- **Type**: A
-- **Value**: `4.213.96.238`
-- **TTL**: 300
-
-## GitHub Repository
-
-| Item | Value |
-|------|-------|
-| Repository | https://github.com/wtfup/wtf-helpdesk |
-| Visibility | Public |
-| Default Branch | `develop` |
 
 ---
 
-*Generated on: 2026-01-20*
-*Last updated by: Claude Code deployment automation*
+## 5. Environment Variables
+
+**File**: `/home/azureuser/wtf-helpdesk/docker/.env.prod`
+
+```env
+DB_PASSWORD=WtfH3lpd3sk2026Pr0d
+ADMIN_PASSWORD=admin123
+SITE_NAME=support.wtfgyms.com
+LETSENCRYPT_EMAIL=admin@wtfgyms.com
+```
+
+---
+
+## 6. DNS Configuration (AWS Route 53)
+
+| Field | Value |
+|-------|-------|
+| **Hosted Zone** | `wtfgyms.com` |
+| **Hosted Zone ID** | `Z038481734ITCB3JZU9FB` |
+| **Record Name** | `support.wtfgyms.com` |
+| **Record Type** | A |
+| **Record Value** | `4.213.96.238` |
+| **TTL** | 300 |
+
+### AWS CLI Command Used
+```bash
+aws route53 change-resource-record-sets \
+  --hosted-zone-id Z038481734ITCB3JZU9FB \
+  --change-batch file://dns-change.json
+```
+
+---
+
+## 7. SSL Certificate
+
+| Field | Value |
+|-------|-------|
+| **Provider** | Let's Encrypt |
+| **Domain** | support.wtfgyms.com |
+| **Managed By** | Traefik (auto-renewal) |
+| **Storage** | Docker volume `docker_letsencrypt` |
+
+---
+
+## 8. GitHub Repository
+
+| Field | Value |
+|-------|-------|
+| **URL** | https://github.com/wtfup/wtf-helpdesk |
+| **Visibility** | Public |
+| **Default Branch** | `develop` |
+| **CI/CD** | GitHub Actions (`.github/workflows/deploy.yml`) |
+
+### GitHub Actions Secrets Required
+| Secret | Description |
+|--------|-------------|
+| `AZURE_VM_IP` | `4.213.96.238` |
+| `AZURE_SSH_PRIVATE_KEY` | Contents of `~/.ssh/id_rsa` |
+
+---
+
+## 9. WTF Helpdesk Configuration
+
+### Ticket Types (18)
+- WTF Gyms - Membership, Equipment, Billing, Classes
+- WTF Everyday - Orders, Returns, Products
+- WTF Academy - Enrollment, Certification, Placement
+- WTF Reboot - Programs
+- WTF Amplify - Advertising
+- WTF Franchise - Inquiry, Operations
+- General Inquiry, Complaint, Feedback, App Support
+
+### Support Teams (9)
+- WTF Gyms Support
+- WTF Everyday Support
+- WTF Academy Support
+- WTF Reboot Support
+- WTF Amplify Support
+- WTF Franchise Support
+- WTF Billing Team
+- WTF Technical Support
+- WTF Escalations
+
+### SLAs (4)
+| SLA | Response | Resolution | Condition |
+|-----|----------|------------|-----------|
+| WTF 360 Premium | 15 min | 1 hour | membership_type = '360 Premium' |
+| WTF Premium | 30 min | 2 hours | membership_type = 'Premium' |
+| WTF Franchise | 15 min | 1 hour | ticket_type contains 'Franchise' |
+| WTF Basic | 1 hour | 4 hours | Default |
+
+### Custom Fields on Tickets
+- `member_id` - Data
+- `membership_type` - Select (360 Premium, Premium, Basic, etc.)
+- `gym_location` - Data
+- `wtf_vertical` - Select (WTF Gyms, Everyday, Academy, etc.)
+
+---
+
+## 10. Useful Commands
+
+### Reset Admin Password
+```bash
+ssh azureuser@4.213.96.238
+cd ~/wtf-helpdesk/docker
+docker compose -f docker-compose.prod.yml exec backend \
+  bench --site support.wtfgyms.com set-admin-password <new_password>
+```
+
+### Clear Cache
+```bash
+docker compose -f docker-compose.prod.yml exec backend \
+  bench --site support.wtfgyms.com clear-cache
+```
+
+### Run Migrations
+```bash
+docker compose -f docker-compose.prod.yml exec backend \
+  bench --site support.wtfgyms.com migrate
+```
+
+### Rebuild Frontend
+```bash
+docker compose -f docker-compose.prod.yml exec backend \
+  bench build --app helpdesk
+```
+
+### Backup Database
+```bash
+docker compose -f docker-compose.prod.yml exec backend \
+  bench --site support.wtfgyms.com backup
+```
+
+### View Traefik/SSL Logs
+```bash
+docker logs docker-traefik-1 2>&1 | tail -50
+```
+
+---
+
+## 11. Monthly Cost Estimate
+
+| Resource | SKU | Cost (USD) |
+|----------|-----|------------|
+| Azure VM | Standard_B2s | ~$30 |
+| Disk | 64GB Premium SSD | ~$10 |
+| Public IP | Static | ~$3 |
+| Bandwidth | ~50GB | ~$5 |
+| **Total** | | **~$48/month** |
+
+---
+
+## 12. Quick Reference URLs
+
+| Service | URL |
+|---------|-----|
+| **Production Site** | https://support.wtfgyms.com |
+| **Direct IP** | http://4.213.96.238 |
+| **GitHub Repo** | https://github.com/wtfup/wtf-helpdesk |
+| **Azure Portal** | https://portal.azure.com/#resource/subscriptions/8c3f21da-bea3-46d8-8916-0c07ff7db261/resourceGroups/wtf-helpdesk-rg |
+
+---
+
+*Generated: 2026-01-20*
+*Deployed by: Claude Code*
