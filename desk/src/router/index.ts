@@ -14,12 +14,24 @@ declare module "vue-router" {
     agent?: boolean;
     admin?: boolean;
     public?: boolean;
+    noAuth?: boolean; // Allow access without login (e.g., support landing page)
     onSuccessRoute?: string;
     parent?: string;
   }
 }
 
 const routes = [
+  // Support Portal Landing Page (Public - No Auth Required)
+  {
+    path: "/support",
+    name: "SupportHome",
+    component: () => import("@/pages/SupportHome.vue"),
+    meta: {
+      public: true,
+      noAuth: true, // Allows access without login
+    },
+  },
+
   // Agent Portal Routes
   {
     path: "/",
@@ -151,7 +163,7 @@ const routes = [
     component: () => import("@/pages/knowledge-base/KnowledgeBaseCustomer.vue"),
     meta: {
       public: true,
-      auth: true,
+      noAuth: true, // Allow browsing KB without login
     },
   },
   {
@@ -161,7 +173,7 @@ const routes = [
     props: true,
     meta: {
       public: true,
-      auth: true,
+      noAuth: true, // Allow browsing KB without login
     },
   },
   {
@@ -171,7 +183,7 @@ const routes = [
     props: true,
     meta: {
       public: true,
-      auth: true,
+      noAuth: true, // Allow browsing KB without login
     },
   },
 
@@ -195,6 +207,13 @@ export const router = createRouter({
 router.beforeEach(async (to, _, next) => {
   const authStore = useAuthStore();
   isCustomerPortal.value = to.meta.public || false;
+
+  // Allow access to noAuth pages (like support landing) without login
+  if (to.meta.noAuth) {
+    next();
+    return;
+  }
+
   if (authStore.isLoggedIn) {
     await authStore.init();
   }
