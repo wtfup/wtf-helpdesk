@@ -161,10 +161,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { createListResource } from "frappe-ui";
-import { capture } from "@/telemetry";
 
 const router = useRouter();
 const searchQuery = ref("");
@@ -179,10 +178,10 @@ const categories = createListResource({
   orderBy: "idx asc",
   pageLength: 9,
   auto: true,
-  transform: (data) => {
-    return data.map((cat: any) => ({
+  transform: (data: any[]) => {
+    return data.map((cat) => ({
       ...cat,
-      article_count: 0, // Could be enhanced to show actual count
+      article_count: 0,
     }));
   },
 });
@@ -195,10 +194,6 @@ const handleSearch = () => {
     });
   }
 };
-
-onMounted(() => {
-  capture("support_home_viewed");
-});
 </script>
 
 <style scoped>
