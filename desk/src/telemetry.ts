@@ -1,6 +1,8 @@
 import { ref } from "vue";
 import { createResource } from "frappe-ui";
-import "../../../frappe/frappe/public/js/lib/posthog.js";
+
+// PostHog is loaded from Frappe at runtime, not imported at build time
+// This avoids build errors when building outside Frappe bench environment
 
 const APP = "helpdesk";
 const SITENAME = window.location.hostname;
