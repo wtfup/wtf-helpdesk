@@ -3,14 +3,10 @@
     <!-- Hero Section -->
     <div class="bg-gradient-to-br from-wtf-dark to-gray-900 text-white">
       <div class="max-w-5xl mx-auto px-6 py-16 text-center">
-        <!-- Logo -->
+        <!-- Logo/Brand -->
         <div class="flex justify-center mb-6">
-          <img
-            src="/assets/helpdesk/images/wtf-logo-white.png"
-            alt="WTF Support"
-            class="h-12"
-            onerror="this.style.display='none'"
-          />
+          <span class="text-3xl font-bold">WTF</span>
+          <span class="text-3xl font-light ml-2">Support</span>
         </div>
 
         <h1 class="text-4xl font-bold mb-4">How can we help you?</h1>
