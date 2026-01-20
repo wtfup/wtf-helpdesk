@@ -761,6 +761,16 @@ class HDTicket(Document):
             "acknowledgement"
         )
 
+        # Get contact info for the template
+        contact_info = {"first_name": "", "full_name": "", "email": self.raised_by}
+        if self.contact:
+            contact_doc = frappe.get_doc("Contact", self.contact)
+            contact_info = {
+                "first_name": contact_doc.first_name or "",
+                "full_name": contact_doc.full_name or "",
+                "email": self.raised_by,
+            }
+
         try:
             frappe.sendmail(
                 recipients=[self.raised_by],
@@ -768,6 +778,7 @@ class HDTicket(Document):
                 message=self._get_rendered_template(
                     acknowledgement_email_content,
                     default_acknowledgement_email_content,
+                    {"contact": contact_info},
                 ),
                 reference_doctype="HD Ticket",
                 reference_name=self.name,
